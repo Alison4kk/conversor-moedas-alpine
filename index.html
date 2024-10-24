@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="bootstrap.min.css" rel="stylesheet">
+  <title>Conversor de Modeas - AlpineJS</title>
+  <script defer src="alpine.min.js"></script>
+  <!-- <script src="components.js"></script> -->
+</head>
+<body>
+  <script>
+
+    //Dados globais (substituir por uma chamada a API)
+    const dadosMoedas = [
+      {
+        chave: 'BRL',
+        nome: 'Real',
+        taxaCambio: {
+          'USD': 0.19,
+          'EUR': 0.16,
+        }
+      },
+      {
+        chave: 'USD',
+        nome: 'Dolar',
+        taxaCambio: {
+          'BRL': 5.24,
+          'EUR': 0.85,
+        }
+      },
+      {
+        chave: 'EUR',
+        nome: 'Euro',
+        taxaCambio: {
+          'BRL': 6.22,
+          'USD': 1.18,
+        }
+      }
+    ];
+
+    //RF 5. Funções Puras e Imutabilidade:
+    /**
+     * @param {string} moeda 
+     * @returns {boolean}
+     */
+    function moedaOrigemValida(moeda) {
+      return dadosMoedas.some(moedaDisponivel => moedaDisponivel.chave === moeda);
+    }
+
+    /**
+    * @param {number} numero
+    * @returns {boolean}
+    */
+    function numeroMaiorQueZero(numero) {
+      return !isNaN(numero) && numero > 0;
+    }
+
+    /**
+      * @param {number} valor 
+      * @param {string} moeda 
+      * @returns {string}
+      */
+    function formatarValor(valor, moeda) {
+      return Number(valor).toLocaleString('pt-br', { style: "currency", currency: String(moeda) });
+    }
+
+    /**
+    * @param {any} valor
+    * @returns {boolean}
+    */
+    function ehVerdadeiro(valor) {
+      return !!valor;
+    }
+
+
+    //RF 2. Taxa de Câmbio e 3. Conversão de Moeda:
+    /**
+    * @param {number} valor
+    * @param {number} taxaCambio
+    * @returns {number}
+    */
+    function converterValorTaxaCambio(valor, taxaCambio) {
+      return valor * taxaCambio;
+
+    }
+
+    // RF 4. Validação:
+    /**
+    * @param {number} valorOrigem
+    * @param {number} taxaCambio 
+    * @param {number} moedaOrigem 
+    * @param {number} moedaDestino 
+    * @returns {boolean}
+    */
+    function validarInputs(valorOrigem, taxaCambio, moedaOrigem, moedaDestino) {
+      // RF 6. Funções de Ordem Superior:
+      return [
+        [valorOrigem, taxaCambio].every(numeroMaiorQueZero),
+        [moedaOrigem, moedaDestino].every(moedaOrigemValida)
+      ].every(ehVerdadeiro);
+    }
+
+    function conversorMoedasData() {
+      return {
+        valor: null,
+        taxaCambio: 0,
+        moedaOrigem: 'BRL',
+        moedaDestino: 'BRL',
+        init() {
+          this.$watch('moedaOrigem', this.aoAtualizarCampos.bind(this));
+          this.$watch('moedaDestino', this.aoAtualizarCampos.bind(this));
+
+          this.aoAtualizarCampos();
+        },
+        aoAtualizarCampos() {
+          this.definirMoedaDestinoValida();
+          this.definirTaxaCambioAutomatica();
+        },
+        definirTaxaCambioAutomatica() {
+          const moeda = dadosMoedas.find(moeda => moeda.chave == this.moedaOrigem);
+          this.taxaCambio = moeda.taxaCambio[this.moedaDestino] ?? 0;
+        },
+        definirMoedaDestinoValida() {
+          if (this.moedaDestino == this.moedaOrigem) {
+            this.moedaDestino = this.moedasDisponiveisDestino[0].id;
+          }
+        },
+        get valido() {
+          return validarInputs(this.valor, this.taxaCambio, this.moedaOrigem, this.moedaDestino);
+        },
+        get valorFormatado() {
+          if (!this.valido) return formatarValor(0, this.moedaOrigem);
+          return formatarValor(this.valor, this.moedaOrigem);
+        },
+        get valorConvertido() {
+          if (!this.valido) return 0;
+
+          return converterValorTaxaCambio(this.valor, this.taxaCambio);
+        },
+        get valorConvertidoFormatado() {
+          if (!this.valido) return formatarValor(0, this.moedaDestino);
+          return formatarValor(this.valorConvertido, this.moedaDestino);
+        },
+        get moedasDisponiveisOrigem() {
+          return dadosMoedas.map(moeda => ({ id: moeda.chave, nome: moeda.nome }));
+        },
+        get moedasDisponiveisDestino() {
+          return this.moedasDisponiveisOrigem.filter(moeda => moeda.id !== this.moedaOrigem);
+        }
+      }
+    }
+
+
+  </script>
+  <div style="height: 100vh; width: 100vw; background-color: #0a2c4b;"
+    class=" p-4 d-flex align-items-center justify-content-center">
+    <div class="card" style="max-width: 600px; width: 100%;" x-data="conversorMoedasData()">
+      <div class="card-body">
+        <h5 class="card-title text-center">Conversor de Moedas</h5>
+        <p class="card-text text-center">Desenvolvido por: Álison Loffi.</p>
+        <div class="mt-5 d-flex flex-column gap-3">
+          <div class="form-floating">
+            <input x-model.number="valor" type="number" class="form-control" id="inputValor">
+            <label for="inputValor">Valor</label>
+          </div>
+          <div class="row ">
+            <div class="col">
+              <div class="form-floating ">
+                <select x-model="moedaOrigem" class="form-select" id="deInput" aria-label="">
+                  <template x-for="(moeda) in moedasDisponiveisOrigem">
+                    <option :value="moeda.id" x-text="moeda.nome"></option>
+                  </template>
+                </select>
+                <label for="deInput">De: </label>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-floating ">
+                <select x-model="moedaDestino" class="form-select" id="paraInput" aria-label="">
+                  <template x-for="moeda in moedasDisponiveisDestino">
+                    <option :value="moeda.id" x-text="moeda.nome"></option>
+                  </template>
+                </select>
+                <label for="paraInput">Para: </label>
+              </div>
+            </div>
+          </div>
+          <div class="row align-items-center">
+            <div class="col-5">
+              <div class="border border-secondary-subtle rounded p-2" x-text="valorFormatado"></div>
+            </div>
+            <div class="col">
+              <div class="text-center fw-bold fs-3"> = </div>
+            </div>
+            <div class="col-5">
+              <div class="border border-secondary-subtle rounded p-2" x-text="valorConvertidoFormatado"></div>
+            </div>
+          </div>
+          <div />
+        </div>
+      </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.1.js"
+      integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"></script>
+</body>
+</html>
