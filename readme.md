@@ -2,6 +2,8 @@
 
 Esse projeto foi feito para um trabalho da faculdade, onde o objetivo é aplicar conceitos da programação funcional.
 
+Membros do grupo: @alison4kk
+
 ## Como acessar:
 
  - Baixar o repositório e abrir o arquivo index.html
@@ -20,3 +22,4 @@ Esse projeto foi feito para um trabalho da faculdade, onde o objetivo é aplicar
 ## Funcionamento
 
 O conversor de moedas é bem simples, onde o usuário pode escolher a moeda de origem e a moeda de destino, e informar o valor que deseja converter.
+
